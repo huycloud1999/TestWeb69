@@ -45,8 +45,23 @@ export const SignIn = async (req, res) => {
 //bài4
 export const getProductDescriptions = async (req, res) => {
     try {
-        const ordersWithProducts = await Order.find().populate('item', 'description');
-      resClientData(res, 200, ordersWithProducts, "Lấy dữ liệu thành công");
+        const orders = await Order.find();
+        console.log(orders)
+        const productIds = [...new Set(orders.map(order => order.item))];
+        const descriptionsPromises = productIds.map(productId => {
+          return Inventory.findOne({ sku: productId });
+        });
+        const descriptions = await Promise.all(descriptionsPromises);
+        console.log(descriptions)
+        const ordersWithDescriptions = orders.map(order => {
+          const description = descriptions.find(desc => desc.sku === order.item).description;
+          return {
+            ...order.toObject(),
+          description 
+          };
+        });
+        console.log(ordersWithDescriptions)
+      resClientData(res, 200, ordersWithDescriptions, "Lấy dữ liệu thành công");
     } catch (error) {
       resClientData(res, 500, [], "Lấy dữ liệu thấy bại");
     }
